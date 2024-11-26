@@ -1,59 +1,89 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h> // Для gettimeofday
+#include <sys/time.h>
 
+// Подсчёт букв
+void count_letters_in_line(const char line[], int *count_o, int *count_O) {
+    *count_o = 0;
+    *count_O = 0;
 
-int count_min = 0;
-int count_max = 0;
-
-// подсчет букв
-void count_letters_in_line(const char *line) {
     for (int i = 0; i < strlen(line); i++) {
         if (line[i] == 'o') {
-            count_min++;
+            (*count_o)++;
         } else if (line[i] == 'O') {
-            count_max++;
+            (*count_O)++;
         }
     }
 }
 
-// открытие файла
-void process_file(const char *file_path) {
-    FILE *file = fopen(file_path, "r");
-    if (file == NULL) {
-        perror("Unable to open file");
+// Открытие файла
+void process_file(const char input_path[], const char output_path[]) {
+    FILE *input_file = fopen(input_path, "r");
+    if (input_file == NULL) {
+        perror("Unable to open input file");
         exit(1);
     }
 
-    char line[256];
-    while (fgets(line, sizeof(line), file)) {
-        line[strcspn(line, "\n")] = 0; //символ \n
-        count_letters_in_line(line);
+    FILE *output_file = fopen(output_path, "w");
+    if (output_file == NULL) {
+        perror("Unable to open output file");
+        fclose(input_file);
+        exit(1);
     }
 
-    fclose(file);
+    int line_number = 0;
+    int total_o = 0;
+    int total_O = 0;
+
+    char line[256];
+
+    while (fgets(line, sizeof(line), input_file)) {
+        line_number++;
+        line[strcspn(line, "\n")] = 0;
+
+        int count_o = 0;
+        int count_O = 0;
+        count_letters_in_line(line, &count_o, &count_O);
+
+        fprintf(output_file, "Строка %d: Маленьких 'o': %d, Больших 'O': %d\n",
+                line_number, count_o, count_O);
+
+        total_o += count_o;
+        total_O += count_O;
+    }
+
+    fprintf(output_file, "\nОбщее количество:\n");
+    fprintf(output_file, "Маленьких 'o': %d\n", total_o);
+    fprintf(output_file, "Больших 'O': %d\n", total_O);
+
+    fclose(input_file);
+    fclose(output_file);
 }
 
-// время
-double measure_time(void (*function)(const char *), const char *file_path) {
+int main() {
+    const char input_path[] = "words.txt";
+    const char output_path[] = "output.txt";
     struct timeval start, end;
-    gettimeofday(&start, NULL);
 
-    function(file_path);
+
+    FILE *try_open = fopen(input_path, "r");
+    if (try_open == NULL) {
+        perror("Нэт файла");
+        return 1;
+    }
+    fclose(try_open);
+
+    gettimeofday(&start, NULL);
+    
+    process_file(input_path, output_path);
 
     gettimeofday(&end, NULL);
-    return (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1000000.0;
-}
 
-// Основная функция
-int main() {
-    const char *file_path = "words.txt";
+    double elapsed_time = (end.tv_sec - start.tv_sec) +
+                          (end.tv_usec - start.tv_usec) / 1000000.0;
 
-    double elapsed_time = measure_time(process_file, file_path);
-
-    printf("Больших букв O: %d\n", count_max);
-    printf("Маленьких букв o: %d\n", count_min);
+    printf("Все в файле: %s\n", output_path);
     printf("Время выполнения: %.6f секунд\n", elapsed_time);
 
     return 0;
