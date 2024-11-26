@@ -3,13 +3,13 @@
 #include <string.h>
 #include <sys/time.h> // Для gettimeofday
 
-// Глобальные переменные для подсчёта букв
+
 int count_min = 0;
 int count_max = 0;
 
-// Функция для подсчёта букв 'o' и 'O' в строке
+// подсчет букв
 void count_letters_in_line(const char *line) {
-    for (size_t i = 0; i < strlen(line); i++) {
+    for (int i = 0; i < strlen(line); i++) {
         if (line[i] == 'o') {
             count_min++;
         } else if (line[i] == 'O') {
@@ -18,7 +18,7 @@ void count_letters_in_line(const char *line) {
     }
 }
 
-// Функция для обработки файла
+// открытие файла
 void process_file(const char *file_path) {
     FILE *file = fopen(file_path, "r");
     if (file == NULL) {
@@ -28,14 +28,14 @@ void process_file(const char *file_path) {
 
     char line[256];
     while (fgets(line, sizeof(line), file)) {
-        line[strcspn(line, "\n")] = 0; // Убираем символ новой строки
+        line[strcspn(line, "\n")] = 0; //символ \n
         count_letters_in_line(line);
     }
 
     fclose(file);
 }
 
-// Функция для замера времени выполнения
+// время
 double measure_time(void (*function)(const char *), const char *file_path) {
     struct timeval start, end;
     gettimeofday(&start, NULL);
