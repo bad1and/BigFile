@@ -1,90 +1,63 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/time.h>
-
-// Подсчёт букв
-void count_letters_in_line(const char line[], int *count_o, int *count_O) {
-    *count_o = 0;
-    *count_O = 0;
-
-    for (int i = 0; i < strlen(line); i++) {
-        if (line[i] == 'o') {
-            (*count_o)++;
-        } else if (line[i] == 'O') {
-            (*count_O)++;
-        }
-    }
-}
-
-// Открытие файла
-void process_file(const char input_path[], const char output_path[]) {
-    FILE *input_file = fopen(input_path, "r");
-    if (input_file == NULL) {
-        perror("Unable to open input file");
-        exit(1);
-    }
-
-    FILE *output_file = fopen(output_path, "w");
-    if (output_file == NULL) {
-        perror("Unable to open output file");
-        fclose(input_file);
-        exit(1);
-    }
-
-    int line_number = 0;
-    int total_o = 0;
-    int total_O = 0;
-
-    char line[256];
-
-    while (fgets(line, sizeof(line), input_file)) {
-        line_number++;
-        line[strcspn(line, "\n")] = 0;
-
-        int count_o = 0;
-        int count_O = 0;
-        count_letters_in_line(line, &count_o, &count_O);
-
-        fprintf(output_file, "Строка %d: Маленьких 'o': %d, Больших 'O': %d\n",
-                line_number, count_o, count_O);
-
-        total_o += count_o;
-        total_O += count_O;
-    }
-
-    fprintf(output_file, "\nОбщее количество:\n");
-    fprintf(output_file, "Маленьких 'o': %d\n", total_o);
-    fprintf(output_file, "Больших 'O': %d\n", total_O);
-
-    fclose(input_file);
-    fclose(output_file);
-}
+#include <time.h>
 
 int main() {
-    const char input_path[] = "words.txt";
-    const char output_path[] = "output.txt";
-    struct timeval start, end;
+    char textBuffer[2048];
+    FILE *input = fopen("lab4.txt", "r");
+    FILE *output = fopen("output.txt", "w");
 
 
-    FILE *try_open = fopen(input_path, "r");
-    if (try_open == NULL) {
-        perror("Нэт файла");
+    clock_t startTime = clock();
+
+    if (input) {
+        int capitalOCount = 0, smallOCount = 0;
+        int totalCapitalO = 0, totalSmallO = 0;
+        int lines = 1;
+        int b_index = 0;
+
+        while ((textBuffer[b_index] = fgetc(input)) != EOF) {
+            if (textBuffer[b_index] == '\n') {
+                fprintf(output, "Строка: %3d   Букв О: %3d   Букв о: %3d\n", lines, capitalOCount, smallOCount);
+                totalCapitalO += capitalOCount;
+                totalSmallO += smallOCount;
+                capitalOCount = 0;
+                smallOCount = 0;
+                lines++;
+            } else if (textBuffer[b_index] == 'O') {
+                capitalOCount++;
+            } else if (textBuffer[b_index] == 'o') {
+                smallOCount++;
+            }
+
+            b_index = (b_index + 1) % 2048; // очистака при переполнении
+        }
+
+
+        if (capitalOCount > 0 || smallOCount > 0) {
+            fprintf(output, "Строка: %3d   Букв О: %3d   Букв о: %3d\n", lines, capitalOCount, smallOCount);
+            totalCapitalO += capitalOCount;
+            totalSmallO += smallOCount;
+        }
+
+
+        fprintf(output, "\nОбщее количество:\n");
+        fprintf(output, "Всего строк: %d\n", lines);
+        fprintf(output, "Всего букв О: %d\n", totalCapitalO);
+        fprintf(output, "Всего букв о: %d\n", totalSmallO);
+
+        fclose(input);
+        fclose(output);
+    } else {
+        printf("No file.\n");
         return 1;
     }
-    fclose(try_open);
 
-    gettimeofday(&start, NULL);
-    
-    process_file(input_path, output_path);
+    // Замер времени завершения программы
+    clock_t endTime = clock();
+    double executionTime = (double)(endTime - startTime) / CLOCKS_PER_SEC;
 
-    gettimeofday(&end, NULL);
-
-    double elapsed_time = (end.tv_sec - start.tv_sec) +
-                          (end.tv_usec - start.tv_usec) / 1000000.0;
-
-    printf("Все в файле: %s\n", output_path);
-    printf("Время выполнения: %.6f секунд\n", elapsed_time);
+    // Вывод времени выполнения в консоль
+    printf("Программа завершена за %.3f секунд.\n", executionTime);
 
     return 0;
 }
